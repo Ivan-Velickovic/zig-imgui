@@ -22,8 +22,8 @@ typeConversions = {
     'unsigned short': 'u16',
     'float': 'f32',
     'double': 'f64',
-    'void*': '?*c_void',
-    'const void*': '?*const c_void',
+    'void*': '?*anyopaque',
+    'const void*': '?*const anyopaque',
     'bool': 'bool',
     'char': 'u8',
     'unsigned char': 'u8',
@@ -585,7 +585,7 @@ class ZigData:
     def writeFile(self, f):
         f.write('const assert = @import("std").debug.assert;\n\n')
         for t in self.opaqueTypes:
-            f.write('pub const '+self.convertTypeName(t)+' = @OpaqueType();\n')
+            f.write('pub const '+self.convertTypeName(t)+' = opaque {};\n')
 
         for v in self.typedefs.values():
             f.write(v + '\n')
