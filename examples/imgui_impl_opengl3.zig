@@ -30,6 +30,7 @@
 //----------------------------------------
 
 const std = @import("std");
+const builtin = @import("builtin");
 const imgui = @import("imgui");
 const gl = @import("include/gl.zig");
 
@@ -132,7 +133,7 @@ fn SetupRenderState(draw_data: *imgui.DrawData, fb_width: c_int, fb_height: c_in
     gl.glUniform1i(g_AttribLocationTex, 0);
     gl.glUniformMatrix4fv(g_AttribLocationProjMtx, 1, gl.GL_FALSE, &ortho_projection[0][0]);
     if (@hasDecl(gl, "glBindSampler")) {
-        glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 may set that otherwise.
+        gl.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 may set that otherwise.
     }
 
     gl.glBindVertexArray(vertex_array_object);
@@ -148,7 +149,7 @@ fn SetupRenderState(draw_data: *imgui.DrawData, fb_width: c_int, fb_height: c_in
         gl.GL_FLOAT,
         gl.GL_FALSE,
         @sizeOf(imgui.DrawVert),
-        @intToPtr(?*c_void, @byteOffsetOf(imgui.DrawVert, "pos")),
+        @intToPtr(?*anyopaque, @offsetOf(imgui.DrawVert, "pos")),
     );
     gl.glVertexAttribPointer(
         @intCast(c_uint, g_AttribLocationVtxUV),
@@ -156,7 +157,7 @@ fn SetupRenderState(draw_data: *imgui.DrawData, fb_width: c_int, fb_height: c_in
         gl.GL_FLOAT,
         gl.GL_FALSE,
         @sizeOf(imgui.DrawVert),
-        @intToPtr(?*c_void, @byteOffsetOf(imgui.DrawVert, "uv")),
+        @intToPtr(?*anyopaque, @offsetOf(imgui.DrawVert, "uv")),
     );
     gl.glVertexAttribPointer(
         @intCast(c_uint, g_AttribLocationVtxColor),
@@ -164,7 +165,7 @@ fn SetupRenderState(draw_data: *imgui.DrawData, fb_width: c_int, fb_height: c_in
         gl.GL_UNSIGNED_BYTE,
         gl.GL_TRUE,
         @sizeOf(imgui.DrawVert),
-        @intToPtr(?*c_void, @byteOffsetOf(imgui.DrawVert, "col")),
+        @intToPtr(?*anyopaque, @offsetOf(imgui.DrawVert, "col")),
     );
 }
 
@@ -214,7 +215,7 @@ pub fn RenderDrawData(draw_data: *imgui.DrawData) void {
     var last_enable_scissor_test = gl.glIsEnabled(gl.GL_SCISSOR_TEST);
 
     var clip_origin_lower_left = true;
-    if (@hasDecl(gl, "GL_CLIP_ORIGIN") and !os.darwin.is_the_target) {
+    if (@hasDecl(gl, "GL_CLIP_ORIGIN") and !builtin.os.darwin.is_the_target) {
         var last_clip_origin = getGLInt(gl.GL_CLIP_ORIGIN); // Support for GL 4.5's glClipControl(GL_UPPER_LEFT)
         if (last_clip_origin == gl.GL_UPPER_LEFT)
             clip_origin_lower_left = false;
@@ -273,7 +274,7 @@ pub fn RenderDrawData(draw_data: *imgui.DrawData) void {
                                 gl.GL_TRIANGLES,
                                 @intCast(gl.GLsizei, pcmd.ElemCount),
                                 if (@sizeOf(imgui.DrawIdx) == 2) gl.GL_UNSIGNED_SHORT else gl.GL_UNSIGNED_INT,
-                                @intToPtr(?*const c_void, pcmd.IdxOffset * @sizeOf(imgui.DrawIdx)),
+                                @intToPtr(?*const anyopaque, pcmd.IdxOffset * @sizeOf(imgui.DrawIdx)),
                                 @intCast(gl.GLint, pcmd.VtxOffset),
                             );
                         } else {
@@ -281,7 +282,7 @@ pub fn RenderDrawData(draw_data: *imgui.DrawData) void {
                                 gl.GL_TRIANGLES,
                                 @intCast(gl.GLsizei, pcmd.ElemCount),
                                 if (@sizeOf(imgui.DrawIdx) == 2) gl.GL_UNSIGNED_SHORT else gl.GL_UNSIGNED_INT,
-                                @intToPtr(?*const c_void, pcmd.IdxOffset * @sizeOf(imgui.DrawIdx)),
+                                @intToPtr(?*const anyopaque, pcmd.IdxOffset * @sizeOf(imgui.DrawIdx)),
                             );
                         }
                     }
@@ -355,14 +356,15 @@ fn CheckShader(handle: gl.GLuint, desc: []const u8) bool {
     gl.glGetShaderiv(handle, gl.GL_COMPILE_STATUS, &status);
     gl.glGetShaderiv(handle, gl.GL_INFO_LOG_LENGTH, &log_length);
     if (status == gl.GL_FALSE)
-        std.debug.warn("ERROR: imgui_impl_opengl3.CreateDeviceObjects: failed to compile {}!\n", .{desc});
+        std.log.warn("ERROR: imgui_impl_opengl3.CreateDeviceObjects: failed to compile {s}!\n", .{desc});
     if (log_length > 1) {
         var buf: imgui.Vector(u8) = undefined;
         buf.init();
         defer buf.deinit();
         buf.resize(@intCast(c_int, log_length + 1));
         gl.glGetShaderInfoLog(handle, log_length, null, @ptrCast([*]gl.GLchar, buf.begin()));
-        std.debug.warn("{}\n", .{buf.begin()});
+        const buf_slice = std.mem.sliceTo(buf.begin()[0..@intCast(usize, log_length)+1], 0);
+        std.log.warn("{s}\n", .{ buf_slice });
     }
     return status != gl.GL_FALSE;
 }
@@ -374,14 +376,15 @@ fn CheckProgram(handle: gl.GLuint, desc: []const u8) bool {
     gl.glGetProgramiv(handle, gl.GL_LINK_STATUS, &status);
     gl.glGetProgramiv(handle, gl.GL_INFO_LOG_LENGTH, &log_length);
     if (status == gl.GL_FALSE)
-        std.debug.warn("ERROR: imgui_impl_opengl3.CreateDeviceObjects: failed to link {}! (with GLSL '{}')\n", .{ desc, g_GlslVersionString });
+        std.debug.print("ERROR: imgui_impl_opengl3.CreateDeviceObjects: failed to link {s}! (with GLSL '{s}')\n", .{ desc, g_GlslVersionString });
     if (log_length > 1) {
         var buf: imgui.Vector(u8) = undefined;
         buf.init();
         defer buf.deinit();
         buf.resize(@intCast(c_int, log_length + 1));
         gl.glGetProgramInfoLog(handle, log_length, null, @ptrCast([*]gl.GLchar, buf.begin()));
-        std.debug.warn("{}\n", .{buf.begin()});
+        const buf_slice = std.mem.sliceTo(buf.begin()[0..@intCast(usize, log_length)+1], 0);
+        std.log.warn("{s}\n", .{ buf_slice });
     }
     return status != gl.GL_FALSE;
 }
@@ -398,8 +401,8 @@ fn CreateDeviceObjects() bool {
     const numberPart = g_GlslVersionStringMem["#version ".len..g_GlslVersionString.len];
     if (std.fmt.parseInt(u32, numberPart, 10)) |value| {
         glsl_version = value;
-    } else |err| {
-        std.debug.warn("Couldn't parse glsl version from '{}', '{}'\n", .{ g_GlslVersionString, numberPart });
+    } else |_| {
+        std.log.warn("Couldn't parse glsl version from '{s}', '{s}'\n", .{ g_GlslVersionString, numberPart });
     }
 
     const vertex_shader_glsl_120 = "uniform mat4 ProjMtx;\n" ++

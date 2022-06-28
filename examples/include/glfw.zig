@@ -1,8 +1,8 @@
 const vk = @import("vk.zig");
 
-pub const GLFWmonitor = @OpaqueType();
-pub const GLFWwindow = @OpaqueType();
-pub const GLFWcursor = @OpaqueType();
+pub const GLFWmonitor = opaque {};
+pub const GLFWwindow = opaque {};
+pub const GLFWcursor = opaque {};
 
 pub const GLFWglproc = ?fn () callconv(.C) void;
 pub const GLFWvkproc = ?fn () callconv(.C) void;
@@ -88,8 +88,8 @@ pub extern fn glfwFocusWindow(window: ?*GLFWwindow) void;
 pub extern fn glfwGetWindowMonitor(window: ?*GLFWwindow) ?*GLFWmonitor;
 pub extern fn glfwSetWindowMonitor(window: ?*GLFWwindow, monitor: ?*GLFWmonitor, xpos: c_int, ypos: c_int, width: c_int, height: c_int, refreshRate: c_int) void;
 pub extern fn glfwGetWindowAttrib(window: ?*GLFWwindow, attrib: c_int) c_int;
-pub extern fn glfwSetWindowUserPointer(window: ?*GLFWwindow, pointer: ?*c_void) void;
-pub extern fn glfwGetWindowUserPointer(window: ?*GLFWwindow) ?*c_void;
+pub extern fn glfwSetWindowUserPointer(window: ?*GLFWwindow, pointer: ?*anyopaque) void;
+pub extern fn glfwGetWindowUserPointer(window: ?*GLFWwindow) ?*anyopaque;
 pub extern fn glfwSetWindowPosCallback(window: ?*GLFWwindow, cbfun: GLFWwindowposfun) GLFWwindowposfun;
 pub extern fn glfwSetWindowSizeCallback(window: ?*GLFWwindow, cbfun: GLFWwindowsizefun) GLFWwindowsizefun;
 pub extern fn glfwSetWindowCloseCallback(window: ?*GLFWwindow, cbfun: GLFWwindowclosefun) GLFWwindowclosefun;
@@ -143,7 +143,7 @@ pub extern fn glfwGetInstanceProcAddress(instance: vk.Instance, procname: ?[*:0]
 pub extern fn glfwGetPhysicalDevicePresentationSupport(instance: vk.Instance, device: vk.PhysicalDevice, queuefamily: u32) c_int;
 pub extern fn glfwCreateWindowSurface(instance: vk.Instance, window: *GLFWwindow, allocator: ?*const vk.AllocationCallbacks, surface: *vk.SurfaceKHR) vk.Result;
 
-pub extern fn glfwGetWin32Window(window: ?*GLFWwindow) ?*c_void;
+pub extern fn glfwGetWin32Window(window: ?*GLFWwindow) ?*anyopaque;
 
 pub const GLFW_ACCUM_ALPHA_BITS = 135178;
 pub const GLFW_ACCUM_BLUE_BITS = 135177;

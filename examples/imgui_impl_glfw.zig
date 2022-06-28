@@ -1,13 +1,14 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const imgui = @import("imgui");
 const glfw = @import("include/glfw.zig");
 
-const GLFW_HAS_WINDOW_TOPMOST = (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200); // 3.2+ GLFW_FLOATING
-const GLFW_HAS_WINDOW_HOVERED = (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ GLFW_HOVERED
-const GLFW_HAS_WINDOW_ALPHA = (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ glfwSetWindowOpacity
-const GLFW_HAS_PER_MONITOR_DPI = (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ glfwGetMonitorContentScale
-const GLFW_HAS_VULKAN = (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3200); // 3.2+ glfwCreateWindowSurface
-const GLFW_HAS_NEW_CURSORS = @hasDecl(glfw, "GLFW_RESIZE_NESW_CURSOR") and (GLFW_VERSION_MAJOR * 1000 + GLFW_VERSION_MINOR * 100 >= 3400); // 3.4+ GLFW_RESIZE_ALL_CURSOR, GLFW_RESIZE_NESW_CURSOR, GLFW_RESIZE_NWSE_CURSOR, GLFW_NOT_ALLOWED_CURSOR
+const GLFW_HAS_WINDOW_TOPMOST = (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.GLFW_VERSION_MINOR * 100 >= 3200); // 3.2+ GLFW_FLOATING
+const GLFW_HAS_WINDOW_HOVERED = (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ GLFW_HOVERED
+const GLFW_HAS_WINDOW_ALPHA = (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ glfwSetWindowOpacity
+const GLFW_HAS_PER_MONITOR_DPI = (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.GLFW_VERSION_MINOR * 100 >= 3300); // 3.3+ glfwGetMonitorContentScale
+const GLFW_HAS_VULKAN = (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.GLFW_VERSION_MINOR * 100 >= 3200); // 3.2+ glfwCreateWindowSurface
+const GLFW_HAS_NEW_CURSORS = @hasDecl(glfw, "GLFW_RESIZE_NESW_CURSOR") and (glfw.GLFW_VERSION_MAJOR * 1000 + glfw.wGLFW_VERSION_MINOR * 100 >= 3400); // 3.4+ GLFW_RESIZE_ALL_CURSOR, GLFW_RESIZE_NESW_CURSOR, GLFW_RESIZE_NWSE_CURSOR, GLFW_NOT_ALLOWED_CURSOR
 
 const FLT_MAX = std.math.f32_max;
 
@@ -119,7 +120,7 @@ fn Init(window: *glfw.GLFWwindow, install_callbacks: bool, client_api: GlfwClien
     io.SetClipboardTextFn = @ptrCast(@TypeOf(io.SetClipboardTextFn), SetClipboardText);
     io.GetClipboardTextFn = @ptrCast(@TypeOf(io.GetClipboardTextFn), GetClipboardText);
     io.ClipboardUserData = g_Window;
-    if (std.builtin.os.tag == .windows) {
+    if (builtin.os.tag == .windows) {
         io.ImeWindowHandle = glfw.glfwGetWin32Window(g_Window);
     }
 
@@ -250,11 +251,11 @@ fn UpdateGamepads() void {
     io.BackendFlags.HasGamepad = axes_count > 0 and buttons_count > 0;
 }
 
-fn GetClipboardText(user_data: ?*c_void) callconv(.C) ?[*:0]const u8 {
+fn GetClipboardText(user_data: ?*anyopaque) callconv(.C) ?[*:0]const u8 {
     return glfw.glfwGetClipboardString(@ptrCast(?*glfw.GLFWwindow, user_data));
 }
 
-fn SetClipboardText(user_data: ?*c_void, text: ?[*:0]const u8) callconv(.C) void {
+fn SetClipboardText(user_data: ?*anyopaque, text: ?[*:0]const u8) callconv(.C) void {
     glfw.glfwSetClipboardString(@ptrCast(?*glfw.GLFWwindow, user_data), text);
 }
 
@@ -292,7 +293,7 @@ fn KeyCallback(window: ?*glfw.GLFWwindow, key: c_int, scancode: c_int, action: c
     io.KeyCtrl = io.KeysDown[glfw.GLFW_KEY_LEFT_CONTROL] or io.KeysDown[glfw.GLFW_KEY_RIGHT_CONTROL];
     io.KeyShift = io.KeysDown[glfw.GLFW_KEY_LEFT_SHIFT] or io.KeysDown[glfw.GLFW_KEY_RIGHT_SHIFT];
     io.KeyAlt = io.KeysDown[glfw.GLFW_KEY_LEFT_ALT] or io.KeysDown[glfw.GLFW_KEY_RIGHT_ALT];
-    if (std.builtin.os.tag == .windows) {
+    if (builtin.os.tag == .windows) {
         io.KeySuper = false;
     } else {
         io.KeySuper = io.KeysDown[glfw.GLFW_KEY_LEFT_SUPER] or io.KeysDown[glfw.GLFW_KEY_RIGHT_SUPER];

@@ -3,19 +3,20 @@
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
 const std = @import("std");
+const builtin = @import("builtin");
 const imgui = @import("imgui");
 const impl_glfw = @import("imgui_impl_glfw.zig");
 const impl_gl3 = @import("imgui_impl_opengl3.zig");
 const glfw = @import("include/glfw.zig");
 const gl = @import("include/gl.zig");
 
-const is_darwin = switch (std.builtin.os.tag) {
-    .macosx, .ios, .watchos, .tvos => true,
+const is_darwin = switch (builtin.os.tag) {
+    .macos, .ios, .watchos, .tvos => true,
     else => false,
 };
 
 fn glfw_error_callback(err: c_int, description: ?[*:0]const u8) callconv(.C) void {
-    std.debug.warn("Glfw Error {}: {}\n", .{ err, description });
+    std.debug.print("Glfw Error {}: {s}\n", .{ err, description });
 }
 
 pub fn main() !void {
@@ -54,7 +55,7 @@ pub fn main() !void {
     // Setup Dear ImGui context
     imgui.CHECKVERSION();
     _ = imgui.CreateContext();
-    const io = imgui.GetIO();
+    _ = imgui.GetIO();
     //io.ConfigFlags |= imgui.ConfigFlags.NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= imgui.ConfigFlags.NavEnableGamepad;      // Enable Gamepad Controls
 
